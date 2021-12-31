@@ -1,5 +1,5 @@
 ﻿namespace Internship.Planner.Enums;
 
-public class Class1
+public enum ValidationErrorCode
 {
 }

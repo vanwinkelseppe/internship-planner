@@ -5,72 +5,64 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Internship.Planner.Database;
 
 public class Program
+{
+    private static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            string connectionString = null;
-            var options = new Options();
-            Parser.Default.ParseArguments<Options>(args)
-                .WithParsed(opts =>
-                {
-                    connectionString = opts.ConnectionString;
-                    options = opts;
-                })
-                .WithNotParsed((errs) => throw new ArgumentException(string.Join(Environment.NewLine, errs)));
-            var serviceProvider = CreateServices(connectionString, options);
-
-
-            using var scope = serviceProvider.CreateScope();
-            UpdateDatabase(scope.ServiceProvider);
-        }
-
-        private static IServiceProvider CreateServices(string connectionString, Options options)
-        {
-            return new ServiceCollection()
-                .AddFluentMigratorCore()
-                .ConfigureRunner(rb => rb
-                    .AddSqlServer()
-                    .WithGlobalConnectionString(connectionString)
-                    .ScanIn(typeof(Program).Assembly).For.Migrations())
-                .AddLogging(lb => lb.AddFluentMigratorConsole())
-                .AddSingleton(options)
-                .BuildServiceProvider(false);
-        }
-
-        private static void UpdateDatabase(IServiceProvider serviceProvider)
-        {
-            var runner = serviceProvider.GetRequiredService<IMigrationRunner>();
-            var options = serviceProvider.GetRequiredService<Options>();
-            if (options.Reset)
+        string connectionString = null;
+        var options = new Options();
+        Parser.Default.ParseArguments<Options>(args)
+            .WithParsed(opts =>
             {
-                Retry(() => runner.Processor.Execute(GetClearScript()), 5);
-            }
+                connectionString = opts.ConnectionString;
+                options = opts;
+            })
+            .WithNotParsed(errs => throw new ArgumentException(string.Join(Environment.NewLine, errs)));
+        var serviceProvider = CreateServices(connectionString, options);
 
-            runner.MigrateUp();
-        }
 
-        private static void Retry(Action action, int count)
-        {
-            for (var i = 0; i < count; i++)
+        using var scope = serviceProvider.CreateScope();
+        UpdateDatabase(scope.ServiceProvider);
+    }
+
+    private static IServiceProvider CreateServices(string connectionString, Options options)
+    {
+        return new ServiceCollection()
+            .AddFluentMigratorCore()
+            .ConfigureRunner(rb => rb
+                .AddSqlServer()
+                .WithGlobalConnectionString(connectionString)
+                .ScanIn(typeof(Program).Assembly).For.Migrations())
+            .AddLogging(lb => lb.AddFluentMigratorConsole())
+            .AddSingleton(options)
+            .BuildServiceProvider(false);
+    }
+
+    private static void UpdateDatabase(IServiceProvider serviceProvider)
+    {
+        var runner = serviceProvider.GetRequiredService<IMigrationRunner>();
+        var options = serviceProvider.GetRequiredService<Options>();
+        if (options.Reset) Retry(() => runner.Processor.Execute(GetClearScript()), 5);
+
+        runner.MigrateUp();
+    }
+
+    private static void Retry(Action action, int count)
+    {
+        for (var i = 0; i < count; i++)
+            try
             {
-                try
-                {
-                    action();
-                    break;
-                }
-                catch (Exception)
-                {
-                    if (i == count)
-                    {
-                        throw;
-                    }
-                }
+                action();
+                break;
             }
-        }
+            catch (Exception)
+            {
+                if (i == count) throw;
+            }
+    }
 
-        private static string GetClearScript()
-        {
-            return @"DECLARE @Sql NVARCHAR(500) DECLARE @Cursor CURSOR
+    private static string GetClearScript()
+    {
+        return @"DECLARE @Sql NVARCHAR(500) DECLARE @Cursor CURSOR
                     SET @Cursor = CURSOR FAST_FORWARD FOR
                     SELECT DISTINCT sql = 'ALTER TABLE [' + tc2.TABLE_NAME + '] DROP [' + rc1.CONSTRAINT_NAME + ']'
                     FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc1
@@ -89,5 +81,5 @@ public class Program
                     
                     EXEC sp_MSforeachtable 'DROP TABLE ?'
                     GO";
-        }
     }
+}

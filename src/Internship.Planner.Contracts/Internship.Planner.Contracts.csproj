@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Internship.Planner.Enums\Internship.Planner.Enums.csproj" />
+        <ProjectReference Include="..\Internship.Planner.Enums\Internship.Planner.Enums.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -20,19 +20,21 @@ public partial class M001_Initial : Migration
             .WithColumn("Code").AsString(10).NotNullable()
             .WithColumn("Name").AsString(256).NotNullable()
             .WithColumn("Surname").AsString(256).NotNullable()
-            .WithColumn("Email").AsString(512).NotNullable();
+            .WithColumn("Email").AsString(512).NotNullable()
+            .WithColumn("PhoneNumber").AsString(60).Nullable();
 
 
         Create.Table("Student")
             .WithColumn("Id").AsGuid().PrimaryKey().WithDefault(SystemMethods.NewGuid)
             .WithColumn("Name").AsString(256).NotNullable()
             .WithColumn("Surname").AsString(256).NotNullable()
-            .WithColumn("Email").AsString(512).NotNullable();
+            .WithColumn("Email").AsString(512).NotNullable()
+            .WithColumn("PhoneNumber").AsString(60).Nullable();
         
         Create.Table("Location")
             .WithColumn("Id").AsGuid().PrimaryKey().WithDefault(SystemMethods.NewGuid)
             .WithColumn("Name").AsString(256).NotNullable()
-            .WithColumn("Address").AsString(512).NotNullable();
+            .WithColumn("Address").AsString(1024).NotNullable();
         
         Create.Table("Department")
             .WithColumn("Id").AsGuid().PrimaryKey().WithDefault(SystemMethods.NewGuid)
